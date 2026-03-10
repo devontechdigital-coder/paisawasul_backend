@@ -11,7 +11,7 @@ import {
   deleteDepartmentAdmin,getAllPaymentsInvoiceAdmin,getAllOrderPaymentsInvoiceAdmin,getAllPaymentsAdmin,AllPaymentWalletAdmin,EmployeeAcceptOrderController, GetUserTimerOrdersController,EmployeeTimerOrderController,editUserVerifyAdmin, AllPaymentAdmin, AdminAllEnquireStatus, profileImageHealth,withdrawalUserAdmin,AllTransactionWalletAdmin,AllTransactionAdmin
 } from "../controller/adminController.js";
 
-import {
+import {clearAllCache,
   getCategoriesWithProducts ,downloadWalletInvoice, AddCart, contactEnquire, razorpayCallback, UpdateCart, getCart, userTokenController, userBlogsController, Userlogin, SignupUser, getAllBlogsController, createBlogController,
   LoginAndVerifyOTP, updateBlogController, deleteBlogController, getBlogIdController, CreateChatController, findUserschatController, findchatController
   , EmailVerify, postman, PaymentResponse, PaymentRequest, getProductsByFilterUser, cancelOrderUser,completeOrderUser, ViewAllZones, ViewAllZonesOnly,getProductsByHSN, AuthUserByID, updateProfileUser, SignupNewUser, LoginUserWithOTP, LoginUserWithPass, SendOTP,SignupLoginNew, SignupLoginUser, getTaxIdUser, ViewAllUserTaxes, ViewCompareByUser, applyPromoCode, getHomeLayoutData, AddWishListByUser, deleteCompareByUser, deleteWishListByUser, ViewWishListByUser, AddCompareByUser, ViewProductRating, ViewCategoryRating, AddRating, UsergetAllCategories, UsergetAllProducts, UsergetAllHomeProducts,FullOrdersViewController, userOrdersViewController, getAllAttributeUser, getProductIdUser, updateUserLocationController,updateUserController, createOrderController, updateUserAndCreateOrderController, userOrdersController, getHomeData, GetAllCategoriesByParentIdController, GetAllCategoriesController,GetAllCategoriesBySlugController
@@ -485,6 +485,7 @@ router.get(
   getAllOrderPaymentsInvoiceAdmin
 );
 
+router.get('/clear/cache/', clearAllCache);
 
 
 

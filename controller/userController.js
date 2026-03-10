@@ -10675,3 +10675,13 @@ export const UserAllgallery = async (req, res) => {
     });
   }
 };
+
+
+export const clearAllCache = (req, res)  => {
+  cache.flushAll();
+  console.log("All cache cleared");
+   return res.status(200).send({
+        message: "cache cleared!",
+        success: false,
+      });
+};
