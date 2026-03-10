@@ -1717,6 +1717,7 @@ export const editHomeData = async (req, res) => {
 };
 
 
+ 
 
 export const editHomeLayoutData = async (req, res) => {
   try {
@@ -1743,7 +1744,8 @@ export const editHomeLayoutData = async (req, res) => {
       recommended_products,
       why_choose,
       how_works,
-      faq
+      faq,
+      theme_slider
     } = req.body;
 
     console.log('top_bar', top_bar)
@@ -1769,7 +1771,8 @@ export const editHomeLayoutData = async (req, res) => {
       recommended_products,
       why_choose,
       how_works,
-      faq
+      faq,
+      theme_slider
     };
 
     const homeLayoutData = await homeLayoutModel.findOneAndUpdate({}, updateFields, {
@@ -1797,6 +1800,7 @@ export const editHomeLayoutData = async (req, res) => {
     });
   }
 };
+
 
 // for reviews
 

@@ -109,6 +109,16 @@ const homeLayoutSchema = new mongoose.Schema(
       type: Array,
       default: [], // Added missing field with default empty array
     },
+     theme_slider: {
+      themecode: { type: String, default: "#0000" },
+      title: { type: String, default: "" },
+      subtitle: { type: String, default: "" },
+      background: { type: String, default: "" },
+      cards: {
+        type: Array,
+        default: [], // [{title,image,slug}]
+      },
+    },
 
     },
     { timestamps: true }
