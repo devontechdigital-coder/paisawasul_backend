@@ -977,21 +977,33 @@ export const getCategoryIdAdmin = async (req, res) => {
 
 export const deleteCategoryAdmin = async (req, res) => {
   try {
-    await categoryModel.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+
+    // Remove parent reference from children
+    await categoryModel.updateMany(
+      { parent: id },
+      { $unset: { parent: "" } }
+    );
+
+    // Delete the category
+    await categoryModel.findByIdAndDelete(id);
 
     return res.status(200).send({
       success: true,
-      message: "Employee Deleted!",
+      message: "Category Deleted!",
     });
+
   } catch (error) {
     console.log(error);
     return res.status(400).send({
       success: false,
-      message: "Erorr WHile Deleteing Employee",
+      message: "Error While Deleting Category",
       error,
     });
   }
 };
+
+
 
 export const AddAdminProduct = async (req, res) => {
   try {
