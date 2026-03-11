@@ -2702,7 +2702,7 @@ export const getAllCategoriesByParentId = async (parentId) => {
   }
 };
 
-export const GetAllCategoriesBySlugController = async (req, res) => {
+export const GetAllCategoriesBySlugController_11_march_2026 = async (req, res) => {
   try {
     const { parentSlug } = req.params;
     const { filter, price, page = 1, perPage = 2, location } = req.query;
@@ -2880,6 +2880,186 @@ export const GetAllCategoriesBySlugController = async (req, res) => {
     });
   }
 };
+
+export const GetAllCategoriesBySlugController = async (req, res) => {
+  try {
+    const { parentSlug } = req.params;
+    const { filter, price, page = 1, perPage = 2, location } = req.query;
+
+    if (!parentSlug) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid parent ID.",
+      });
+    }
+
+    // ✅ Build a safe cache key (unique per query)
+    const normalized = {
+      parentSlug,
+      filter: filter || "",
+      price: price || "",
+      page: String(page),
+      perPage: String(perPage),
+      location: (location || "").trim().toLowerCase(),
+    };
+
+    const cacheKey = `cat_slug:${normalized.parentSlug}|f:${normalized.filter}|p:${normalized.price}|pg:${normalized.page}|pp:${normalized.perPage}|loc:${normalized.location}`;
+
+    // 🔹 1️⃣ Check cache first
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return res.status(200).json({
+        success: true,
+        source: "cache",
+        ...cached,
+      });
+    }
+
+    // Fetch main category
+    const MainCat = await categoryModel
+      .findOne({ slug: parentSlug, status: "true" })
+      .select(
+        "title metaTitle metaDescription metaKeywords image description specifications slide_head slide_para filter slug canonical icon_image"
+      )
+      .lean();
+
+    if (!MainCat) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found or inactive.",
+      });
+    }
+
+    const parentId = MainCat._id;
+
+    // ✅ Optional micro-cache for category tree (same parentId repeated a lot)
+    const catTreeKey = `cat_tree:${parentId}`;
+    let categories = cache.get(catTreeKey);
+    if (!categories) {
+      categories = await getAllCategoriesByParentId(parentId);
+      cache.set(catTreeKey, categories, 3600); // 1 hour
+    }
+
+    const filters = { Category: parentId, status: "true" };
+
+    // Variation filters
+    if (filter) {
+      let filterParams;
+      try {
+        filterParams = JSON.parse(filter);
+      } catch (err) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid filter format." });
+      }
+
+      const variationFilters = Object.entries(filterParams).map(
+        ([variationName, valueString]) => {
+          const values = valueString
+            .split(",")
+            .map((v) => v.trim())
+            .filter(Boolean);
+          return {
+            $elemMatch: {
+              name: variationName,
+              value: { $in: values },
+            },
+          };
+        }
+      );
+
+      if (variationFilters.length > 0) {
+        filters.variations = { $all: variationFilters };
+      }
+    }
+
+    // Price filter
+    if (price && price.trim() !== "") {
+      const priceRanges = price.split(",");
+      const priceFilters = priceRanges.map((range) => {
+        const [minPrice, maxPrice] = range.split("-");
+        return {
+          salePrice: { $gte: parseInt(minPrice), $lte: parseInt(maxPrice) },
+          status: "true",
+        };
+      });
+
+      filters.$or = priceFilters;
+    }
+
+    // Location filter (user coverage)
+    if (location) {
+      const trimmedLocation = location.trim();
+      const matchingUsers = await userModel
+        .find({
+          coverage: {
+            $elemMatch: { $regex: new RegExp(`^${trimmedLocation}$`, "i") },
+          },
+        })
+        .select("_id")
+        .lean();
+
+      const matchingUserIds = matchingUsers.map((u) => u._id);
+
+      if (matchingUserIds.length > 0) {
+        filters.userId = { $in: matchingUserIds };
+      } else {
+        // no users in that location -> empty products quickly
+        const payload = {
+          categories,
+          MainCat,
+          products: [],
+          proLength: 0,
+          productsFilter: [],
+        };
+        cache.set(cacheKey, payload, 3600);
+        return res.status(200).json({ success: true, ...payload });
+      }
+    }
+
+    const skip = (page - 1) * perPage;
+
+    // Products
+    const products = await productModel
+      .find(filters)
+      .select("_id title regularPrice salePrice pImage variations slug features userId images")
+      .populate("userId", "username phone email coverage")
+      .skip(skip)
+      .limit(Number(perPage))
+      .lean(); // ✅ add lean for speed
+
+    // ProductsFilter (for filters UI)
+    const Procat = { Category: parentId, status: "true" };
+    const productsFilter = await productModel
+      .find(Procat)
+      .select("_id regularPrice salePrice variations slug images")
+      .lean();
+
+    const payload = {
+      categories,
+      MainCat,
+      products,
+      proLength: products.length,
+      productsFilter,
+    };
+
+    // 🔹 2️⃣ Save to cache for 1 hour
+    cache.set(cacheKey, payload, 3600);
+
+    return res.status(200).json({
+      success: true,
+      source: "db",
+      ...payload,
+    });
+  } catch (error) {
+    console.error("Error in GetAllCategoriesBySlugController:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
 
 export const GetAllCategoriesController = async (req, res) => {
   try {
