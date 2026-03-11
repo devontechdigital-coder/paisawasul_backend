@@ -883,7 +883,7 @@ export const getAllcategoryFillAdmin = async (req, res) => {
   }
 };
 
-export const updateCategoryAdmin = async (req, res) => {
+ export const updateCategoryAdmin = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -898,7 +898,10 @@ export const updateCategoryAdmin = async (req, res) => {
       metaDescription,
       metaKeywords,
       parent,
-      status, specifications, canonical, icon_image
+      status,
+      specifications,
+      canonical,
+      icon_image
     } = req.body;
 
     let updateFields = {
@@ -911,19 +914,33 @@ export const updateCategoryAdmin = async (req, res) => {
       metaTitle,
       metaDescription,
       metaKeywords,
-      parent,
-      status, specifications, canonical, icon_image
+      status,
+      specifications,
+      canonical,
+      icon_image
     };
 
-    const Category = await categoryModel.findByIdAndUpdate(id, updateFields, {
-      new: true,
-    });
+    let updateQuery = { $set: updateFields };
+
+    // If parent is blank remove it
+    if (!parent || parent === "") {
+      updateQuery.$unset = { parent: "" };
+    } else {
+      updateQuery.$set.parent = parent;
+    }
+
+    const Category = await categoryModel.findByIdAndUpdate(
+      id,
+      updateQuery,
+      { new: true }
+    );
 
     return res.status(200).json({
       message: "Category Updated!",
       success: true,
       Category,
     });
+
   } catch (error) {
     return res.status(400).json({
       message: `Error while updating Category: ${error}`,
@@ -932,6 +949,7 @@ export const updateCategoryAdmin = async (req, res) => {
     });
   }
 };
+
 
 export const getCategoryIdAdmin = async (req, res) => {
   try {
